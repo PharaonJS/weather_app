@@ -71,7 +71,10 @@ const WeatherCard = ({ weatherData }) => {
                     <div className="detail-icon">🌡️</div>
                     <div className="detail-info">
                         <p>Давление</p>
-                        <h4>{weatherData.main.pressure} hPa</h4>
+                        <h4>
+                            {Math.round(weatherData.main.pressure * 0.750064)}{" "}
+                            мм
+                        </h4>
                     </div>
                 </div>
                 {/* мин темпа */}
