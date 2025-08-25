@@ -1,58 +1,80 @@
-// импорты
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import SearchBox from "./components/SearchBox";
 import WeatherCard from "./components/WeatherCard";
+import Forecast from "./components/Forecast";
 import LoadingScreen from "./components/LoadingScreen";
 import ErrorMessage from "./components/ErrorMessage";
 import Creator from "./components/Creator";
 
-// основной код
 const App = () => {
-    // статы
     const [weatherData, setWeatherData] = useState(null);
+    const [forecastData, setForecastData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [city, setCity] = useState("Таганрог");
+    const [activeTab, setActiveTab] = useState("current");
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const contentRef = useRef(null);
 
-    // проверка на рефактор города
     useEffect(() => {
-        fetchWeatherData(city);
+        fetchAllWeatherData(city);
     }, [city]);
 
-    // парсинг даты с апи
-    const fetchWeatherData = async (cityName) => {
+    const fetchAllWeatherData = async (cityName) => {
         try {
             setLoading(true);
             const API_KEY = "31a10cc5862fea555a3a366c4f6f28bc";
-            const response = await fetch(
+
+            const currentResponse = await fetch(
                 `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric&lang=ru`,
             );
 
-            if (!response.ok) {
-                // если нет ответа от сервака
+            if (!currentResponse.ok) {
                 throw new Error("Город не найден");
             }
 
-            // рефакторим дату и очищаем ошибку
-            const data = await response.json();
-            setWeatherData(data);
+            const currentData = await currentResponse.json();
+
+            try {
+                const forecastResponse = await fetch(
+                    `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&appid=${API_KEY}&units=metric&lang=ru`,
+                );
+
+                if (forecastResponse.ok) {
+                    const forecastData = await forecastResponse.json();
+                    setForecastData(forecastData);
+                }
+            } catch (forecastError) {
+                console.warn("Ошибка загрузки прогноза:", forecastError);
+                setForecastData(null);
+            }
+
+            setWeatherData(currentData);
             setError(null);
         } catch (err) {
-            // очищаем дату и рефакторим ошибку в случае неудачи
             setError(err.message);
             setWeatherData(null);
+            setForecastData(null);
         } finally {
-            // скажем Нет загрузке!!!
             setLoading(false);
+            setIsRefreshing(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        fetchAllWeatherData(city);
     };
 
     const handleCityChange = (newCity) => {
         setCity(newCity);
     };
 
-    // определяем фон в зависимости от погоды
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+    };
+
     const getBackgroundClass = () => {
         if (!weatherData) return "default-bg";
 
@@ -65,11 +87,9 @@ const App = () => {
     };
 
     if (loading) {
-        // возвращаем dom загрузки
         return <LoadingScreen />;
     }
 
-    // возвращаем dom элементы
     return (
         <div className={`weather-app ${getBackgroundClass()}`}>
             <div className="container">
@@ -77,7 +97,46 @@ const App = () => {
 
                 {error && <ErrorMessage message={error} />}
 
-                {weatherData && <WeatherCard weatherData={weatherData} />}
+                {weatherData && (
+                    <>
+                        <div className="tabs">
+                            <button
+                                className={`tab ${activeTab === "current" ? "active" : ""}`}
+                                onClick={() => handleTabChange("current")}
+                            >
+                                Сейчас
+                            </button>
+                            <button
+                                className={`tab ${activeTab === "forecast" ? "active" : ""}`}
+                                onClick={() => handleTabChange("forecast")}
+                            >
+                                5 дней
+                            </button>
+                            <button
+                                className="refresh-btn"
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                            >
+                                {isRefreshing ? "⏳" : "🔄"}
+                            </button>
+                        </div>
+
+                        <div className="weather-content" ref={contentRef}>
+                            {activeTab === "current" ? (
+                                <WeatherCard
+                                    weatherData={weatherData}
+                                    isRefreshing={isRefreshing}
+                                    forecastData={forecastData}
+                                />
+                            ) : (
+                                <Forecast
+                                    forecastData={forecastData}
+                                    cityName={weatherData.name}
+                                />
+                            )}
+                        </div>
+                    </>
+                )}
 
                 <Creator />
             </div>

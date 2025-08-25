@@ -1,7 +1,6 @@
 import React from "react";
 
-const WeatherCard = ({ weatherData }) => {
-    // форматируем время
+const WeatherCard = ({ weatherData, isRefreshing, forecastData }) => {
     const formatTime = (timestamp) => {
         return new Date(timestamp * 1000).toLocaleTimeString("ru-RU", {
             hour: "2-digit",
@@ -9,10 +8,8 @@ const WeatherCard = ({ weatherData }) => {
         });
     };
 
-    // возвращаем dom элементы
     return (
-        // город и дата
-        <div className="weather-card">
+        <div className={`weather-card ${isRefreshing ? "refreshing" : ""}`}>
             <div className="city-name">
                 <h1>{weatherData.name}</h1>
                 <p className="current-date">
@@ -25,7 +22,6 @@ const WeatherCard = ({ weatherData }) => {
                 </p>
             </div>
 
-            {/* краткое инфо о самой погоде */}
             <div className="current-weather">
                 <div className="temperature">
                     <h2>{Math.round(weatherData.main.temp)}°C</h2>
@@ -46,9 +42,7 @@ const WeatherCard = ({ weatherData }) => {
                 </div>
             </div>
 
-            {/* подробное инфо */}
             <div className="weather-details">
-                {/* ветер */}
                 <div className="detail-item">
                     <div className="detail-icon">💨</div>
                     <div className="detail-info">
@@ -57,7 +51,6 @@ const WeatherCard = ({ weatherData }) => {
                     </div>
                 </div>
 
-                {/* влажность*/}
                 <div className="detail-item">
                     <div className="detail-icon">💧</div>
                     <div className="detail-info">
@@ -66,7 +59,6 @@ const WeatherCard = ({ weatherData }) => {
                     </div>
                 </div>
 
-                {/* давление */}
                 <div className="detail-item">
                     <div className="detail-icon">🌡️</div>
                     <div className="detail-info">
@@ -77,18 +69,18 @@ const WeatherCard = ({ weatherData }) => {
                         </h4>
                     </div>
                 </div>
-                {/* мин темпа */}
 
                 <div className="detail-item">
                     <div className="detail-icon">❄️</div>
                     <div className="detail-info">
                         <p>Мин. температура</p>
-                        <h4>{Math.round(weatherData.main.temp_min)}°C</h4>
+                        <h4>
+                            {Math.round(forecastData.list[0].main.temp_min)}°C
+                        </h4>
                     </div>
                 </div>
             </div>
 
-            {/* восход-закат */}
             <div className="sun-times">
                 <div className="sun-time">
                     <div className="sun-icon">🌅</div>
